@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tagesvers - Beröa Leselounge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            /* Neues statisches Hintergrundbild */
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.3) 100%),
+                        url('background.jpg') center/cover no-repeat fixed;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Header mit Datum und Sonnenzeiten */
+        .header {
+            width: 100%;
+            padding: 30px 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .location {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sun-times {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        .sun-time {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sun-icon {
+            font-size: 1.5rem;
+        }
+
+        .loading {
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        /* Hauptbereich mit Vers */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .verse-card {
+            /* Button-Stil */
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5); /* Hellerer Rand für 3D-Effekt */
+            border-radius: 20px;
+            padding: 50px 40px;
+            max-width: 700px;
+            text-align: center;
+            /* 3D-Optik durch mehrfache Box-Shadows */
+            box-shadow: 
+                0 0 10px rgba(0, 0, 0, 0.1), /* Innere, leichte Schatten */
+                0 10px 20px rgba(0, 0, 0, 0.4), /* Mittlerer Schatten für Tiefe */
+                0 20px 40px rgba(0, 0, 0, 0.6); /* Großer Schatten für "Schweben" */
+            transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+            transition: all 0.5s ease;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        .verse-card:hover {
+            /* Leichter Rotations- und Skalierungseffekt beim Hover für mehr 3D-Gefühl */
+            transform: perspective(1000px) rotateX(1deg) rotateY(-1deg) scale(1.02);
+            box-shadow: 
+                0 0 15px rgba(0, 0, 0, 0.15),
+                0 15px 30px rgba(0, 0, 0, 0.5),
+                0 30px 60px rgba(0, 0, 0, 0.7);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .verse-text {
+            font-size: 1.8rem;
+            font-weight: 300;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .verse-reference {
+            font-size: 1.3rem;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .andacht-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Footer mit Countdown */
+        .footer {
+            width: 100%;
+            padding: 30px 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 -8px 32px 0 rgba(31, 38, 135, 0.2);
+        }
+
+        .countdown-label {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .countdown {
+            font-size: 2.5rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .countdown-unit {
+            font-size: 0.8rem;
+            display: inline-block;
+            margin: 0 10px;
+            opacity: 0.9;
+        }
+
+        .attribution {
+            font-size: 0.8rem;
+            margin-top: 15px;
+            opacity: 0.7;
+        }
+
+        .attribution a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .attribution a:hover {
+            border-bottom-color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .sun-times {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .verse-card {
+                padding: 30px 25px;
+                max-width: 90%;
+            }
+
+            .verse-text {
+                font-size: 1.4rem;
+            }
+
+            .verse-reference {
+                font-size: 1.1rem;
+            }
+
+            .countdown {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1 id="date-display">Lädt...</h1>
+        <div class="location" id="location-display">Marienheide, Deutschland</div>
+        <div class="sun-times">
+            <div class="sun-time">
+                <span class="sun-icon">🌄</span>
+                <span>Sonnenaufgang: <strong id="sunrise-time" class="loading">Lädt...</strong></span>
+            </div>
+            <div class="sun-time">
+                <span class="sun-icon">🌅</span>
+                <span>Sonnenuntergang: <strong id="sunset-time" class="loading">Lädt...</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hauptbereich -->
+    <div class="main-content">
+        <a id="verse-link" class="verse-card" href="#">
+            <div class="andacht-title">Eine schwere Last</div>
+            <p class="verse-text">
+                Kommt her zu mir, alle ihr Mühseligen und Beladenen, und ich werde euch Ruhe geben.
+            </p>
+            <p class="verse-reference">Matthäus 11,28</p>
+            <p class="verse-reference" style="font-size: 0.9rem; margin-top: 15px;">Klicken für die vollständige Andacht</p>
+        </a>
+    </div>
+
+    <!-- Footer mit Countdown -->
+    <div class="footer">
+        <div class="countdown-label">🌇 Zeit bis Sonnenuntergang 🌇</div>
+        <div class="countdown">
+            <span id="hours">00</span><span class="countdown-unit">h</span>
+            <span id="minutes">00</span><span class="countdown-unit">m</span>
+            <span id="seconds">00</span><span class="countdown-unit">s</span>
+        </div>
+        <div class="attribution">
+            Sonnenzeiten bereitgestellt von <a href="https://sunrise-sunset.org/" target="_blank">sunrise-sunset.org</a>
+        </div>
+    </div>
+
+    <script>
+        // Konstanten
+        const MARIENHEIDE_LAT = 51.083;
+        const MARIENHEIDE_LNG = 7.535;
+        const MARIENHEIDE_TIMEZONE = 'Europe/Berlin';
+        const SUN_API_URL = 'https://api.sunrise-sunset.org/json';
+        const VERSE_URL = 'https://www.leselounge.beroea.ch/tagesandacht/';
+
+        // Datum formatieren
+        function formatDate(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const formattedDate = date.toLocaleDateString('de-DE', options);
+            document.getElementById('date-display').textContent = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+        }
+
+        // 24-Stunden-Formatierung und API-Abruf
+        async function fetchSunTimes() {
+            try {
+                // formatted=0 liefert ISO 8601, was die Konvertierung in 24h erleichtert.
+                const response = await fetch(
+                    `${SUN_API_URL}?lat=${MARIENHEIDE_LAT}&lng=${MARIENHEIDE_LNG}&tzid=${MARIENHEIDE_TIMEZONE}&formatted=0`
+                );
+                const data = await response.json();
+
+                if (data.status === 'OK') {
+                    const results = data.results;
+                    
+                    // Die API liefert die Zeiten bereits in der korrekten Zeitzone (Europe/Berlin) dank tzid=...
+                    // Wir müssen die ISO-Strings in Date-Objekte umwandeln, um sie korrekt zu formatieren.
+                    const sunriseDate = new Date(results.sunrise);
+                    const sunsetDate = new Date(results.sunset);
+                    
+                    const formatTime = (date) => {
+                        // Verwenden Sie toLocaleTimeString, um das 24-Stunden-Format zu gewährleisten
+                        return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', hour12: false });
+                    };
+
+                    document.getElementById('sunrise-time').textContent = formatTime(sunriseDate) + ' Uhr';
+                    document.getElementById('sunrise-time').classList.remove('loading');
+                    document.getElementById('sunset-time').textContent = formatTime(sunsetDate) + ' Uhr';
+                    document.getElementById('sunset-time').classList.remove('loading');
+
+                    // Speichere die Sonnenuntergangszeit für den Countdown
+                    window.sunsetTime = sunsetDate;
+                    updateCountdown();
+                } else {
+                    console.error('API Fehler:', data.status);
+                    document.getElementById('sunrise-time').textContent = 'Fehler';
+                    document.getElementById('sunset-time').textContent = 'Fehler';
+                }
+            } catch (error) {
+                console.error('Fehler beim Abrufen der Sonnenzeiten:', error);
+                document.getElementById('sunrise-time').textContent = 'Fehler';
+                document.getElementById('sunset-time').textContent = 'Fehler';
+            }
+        }
+
+        // Countdown bis Sonnenuntergang
+        function updateCountdown() {
+            if (!window.sunsetTime || isNaN(window.sunsetTime)) return;
+
+            const now = new Date();
+            let sunset = new Date(window.sunsetTime);
+
+            // Wenn Sonnenuntergang bereits vorbei ist, berechne für morgen
+            if (now > sunset) {
+                sunset.setDate(sunset.getDate() + 1);
+            }
+
+            const diff = sunset - now;
+
+            if (diff > 0) {
+                const countdownHours = Math.floor(diff / (1000 * 60 * 60));
+                const countdownMinutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const countdownSeconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                document.getElementById('hours').textContent = String(countdownHours).padStart(2, '0');
+                document.getElementById('minutes').textContent = String(countdownMinutes).padStart(2, '0');
+                document.getElementById('seconds').textContent = String(countdownSeconds).padStart(2, '0');
+            } else {
+                document.getElementById('hours').textContent = '00';
+                document.getElementById('minutes').textContent = '00';
+                document.getElementById('seconds').textContent = '00';
+            }
+        }
+
+        // Initialisierung beim Laden
+        window.addEventListener('load', function() {
+            const today = new Date();
+            formatDate(today);
+            fetchSunTimes();
+            
+            // Dynamischen Link für den Button setzen
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+            document.getElementById('verse-link').href = `${VERSE_URL}#${dateString}`;
+            
+            setInterval(updateCountdown, 1000);
+        });
+    </script>
+</body>
+</html>
+
