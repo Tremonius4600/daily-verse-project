@@ -1,0 +1,1 @@
+Die App zeigt das Datum und den Bibelvers des Tages an, bereitgestellt vom Kalender "Näher zu Dir" vom Verlag https://www.beroea.ch/ . Zusätzlich werden Sonnenaufgang und -untergang in Ortszeit dargestellt, plus einem Countdown, wie lange die Sonne noch scheint.  
