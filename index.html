@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -18,11 +19,33 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            /* Neues statisches Hintergrundbild */
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.3) 100%),
-                        url('background.jpg') center/cover no-repeat fixed;
             color: white;
             overflow: hidden;
+            position: relative;
+        }
+
+        /* Dynamischer Hintergrund */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.3) 100%);
         }
 
         /* Header mit Datum und Sonnenzeiten */
@@ -83,31 +106,27 @@
         }
 
         .verse-card {
-            /* Button-Stil */
             display: block;
             text-decoration: none;
             color: inherit;
             cursor: pointer;
-
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.5); /* Hellerer Rand für 3D-Effekt */
+            border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 20px;
             padding: 50px 40px;
             max-width: 700px;
             text-align: center;
-            /* 3D-Optik durch mehrfache Box-Shadows */
             box-shadow: 
-                0 0 10px rgba(0, 0, 0, 0.1), /* Innere, leichte Schatten */
-                0 10px 20px rgba(0, 0, 0, 0.4), /* Mittlerer Schatten für Tiefe */
-                0 20px 40px rgba(0, 0, 0, 0.6); /* Großer Schatten für "Schweben" */
+                0 0 10px rgba(0, 0, 0, 0.1),
+                0 10px 20px rgba(0, 0, 0, 0.4),
+                0 20px 40px rgba(0, 0, 0, 0.6);
             transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
             transition: all 0.5s ease;
             animation: slideUp 0.8s ease-out;
         }
 
         .verse-card:hover {
-            /* Leichter Rotations- und Skalierungseffekt beim Hover für mehr 3D-Gefühl */
             transform: perspective(1000px) rotateX(1deg) rotateY(-1deg) scale(1.02);
             box-shadow: 
                 0 0 15px rgba(0, 0, 0, 0.15),
@@ -231,10 +250,13 @@
     </style>
 </head>
 <body>
+    <!-- Dynamischer Hintergrund -->
+    <div class="background" id="dynamic-background"></div>
+
     <!-- Header -->
     <div class="header">
         <h1 id="date-display">Lädt...</h1>
-        <div class="location" id="location-display">Marienheide, Deutschland</div>
+        <div class="location" id="location-display">Meinerzhagen</div>
         <div class="sun-times">
             <div class="sun-time">
                 <span class="sun-icon">🌄</span>
@@ -250,18 +272,18 @@
     <!-- Hauptbereich -->
     <div class="main-content">
         <a id="verse-link" class="verse-card" href="#">
-            <div class="andacht-title">Eine schwere Last</div>
-            <p class="verse-text">
+            <div class="andacht-title" id="andacht-title">Eine schwere Last</div>
+            <p class="verse-text" id="verse-text">
                 Kommt her zu mir, alle ihr Mühseligen und Beladenen, und ich werde euch Ruhe geben.
             </p>
-            <p class="verse-reference">Matthäus 11,28</p>
+            <p class="verse-reference" id="verse-reference">Matthäus 11,28</p>
             <p class="verse-reference" style="font-size: 0.9rem; margin-top: 15px;">Klicken für die vollständige Andacht</p>
         </a>
     </div>
 
     <!-- Footer mit Countdown -->
     <div class="footer">
-        <div class="countdown-label">🌇 Zeit bis Sonnenuntergang 🌇</div>
+        <div class="countdown-label" id="countdown-label">🌇 Zeit bis Sonnenuntergang 🌇</div>
         <div class="countdown">
             <span id="hours">00</span><span class="countdown-unit">h</span>
             <span id="minutes">00</span><span class="countdown-unit">m</span>
@@ -280,6 +302,88 @@
         const SUN_API_URL = 'https://api.sunrise-sunset.org/json';
         const VERSE_URL = 'https://www.leselounge.beroea.ch/tagesandacht/';
 
+        // Tägliche Verse und Andachtstitel (Beispieldaten)
+        const dailyVerses = {
+            // Format: 'YYYY-MM-DD': { title, text, reference, theme }
+            '2025-10-18': {
+                title: 'Eine schwere Last',
+                text: 'Kommt her zu mir, alle ihr Mühseligen und Beladenen, und ich werde euch Ruhe geben.',
+                reference: 'Matthäus 11,28',
+                theme: 'rest peaceful nature sunset'
+            },
+            '2025-10-19': {
+                title: 'Gottes Liebe',
+                text: 'Denn so sehr hat Gott die Welt geliebt, dass er seinen einzigen Sohn gab.',
+                reference: 'Johannes 3,16',
+                theme: 'love heart sunrise light'
+            },
+            '2025-10-20': {
+                title: 'Vertrauen auf Gott',
+                text: 'Vertraue auf den HERRN von ganzem Herzen und stütze dich nicht auf deinen Verstand.',
+                reference: 'Sprüche 3,5',
+                theme: 'trust mountain path guidance'
+            }
+            // Weitere Verse können hier hinzugefügt werden
+        };
+
+        // Generiere Hintergrundbild basierend auf Thema
+        async function generateBackground(theme) {
+            const today = getTodayDateString();
+            const verseData = dailyVerses[today];
+            
+            if (!verseData) {
+                // Fallback auf Standard-Hintergrundbild
+                document.getElementById('dynamic-background').style.backgroundImage = 
+                    "url('background.jpg')";
+                return;
+            }
+
+            // Verwende Unsplash API für thematische Bilder
+            const keywords = verseData.theme || 'nature peace';
+            const seed = today; // Nutze Datum als Seed für konsistente Bilder pro Tag
+            
+            // Unsplash Source API - liefert zufällige Bilder basierend auf Suchbegriffen
+            const imageUrl = `https://source.unsplash.com/1920x1080/?${encodeURIComponent(keywords)}&sig=${seed}`;
+            
+            // Lade Bild vor und zeige es dann an
+            const img = new Image();
+            img.onload = function() {
+                document.getElementById('dynamic-background').style.backgroundImage = 
+                    `url('${imageUrl}')`;
+            };
+            img.onerror = function() {
+                // Fallback wenn Unsplash nicht verfügbar ist
+                document.getElementById('dynamic-background').style.backgroundImage = 
+                    "url('background.jpg')";
+            };
+            img.src = imageUrl;
+        }
+
+        // Hole heutiges Datum als String
+        function getTodayDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Lade täglichen Vers
+        function loadDailyVerse() {
+            const today = getTodayDateString();
+            const verseData = dailyVerses[today];
+            
+            if (verseData) {
+                document.getElementById('andacht-title').textContent = verseData.title;
+                document.getElementById('verse-text').textContent = verseData.text;
+                document.getElementById('verse-reference').textContent = verseData.reference;
+                generateBackground(verseData.theme);
+            } else {
+                // Fallback auf Standard-Vers (kann später entfernt werden)
+                generateBackground('peace nature');
+            }
+        }
+
         // Datum formatieren
         function formatDate(date) {
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -290,7 +394,6 @@
         // 24-Stunden-Formatierung und API-Abruf
         async function fetchSunTimes() {
             try {
-                // formatted=0 liefert ISO 8601, was die Konvertierung in 24h erleichtert.
                 const response = await fetch(
                     `${SUN_API_URL}?lat=${MARIENHEIDE_LAT}&lng=${MARIENHEIDE_LNG}&tzid=${MARIENHEIDE_TIMEZONE}&formatted=0`
                 );
@@ -298,14 +401,10 @@
 
                 if (data.status === 'OK') {
                     const results = data.results;
-                    
-                    // Die API liefert die Zeiten bereits in der korrekten Zeitzone (Europe/Berlin) dank tzid=...
-                    // Wir müssen die ISO-Strings in Date-Objekte umwandeln, um sie korrekt zu formatieren.
                     const sunriseDate = new Date(results.sunrise);
                     const sunsetDate = new Date(results.sunset);
                     
                     const formatTime = (date) => {
-                        // Verwenden Sie toLocaleTimeString, um das 24-Stunden-Format zu gewährleisten
                         return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', hour12: false });
                     };
 
@@ -314,7 +413,7 @@
                     document.getElementById('sunset-time').textContent = formatTime(sunsetDate) + ' Uhr';
                     document.getElementById('sunset-time').classList.remove('loading');
 
-                    // Speichere die Sonnenuntergangszeit für den Countdown
+                    window.sunriseTime = sunriseDate;
                     window.sunsetTime = sunsetDate;
                     updateCountdown();
                 } else {
@@ -329,19 +428,26 @@
             }
         }
 
-        // Countdown bis Sonnenuntergang
+        // Countdown bis Sonnenuntergang oder Sonnenaufgang
         function updateCountdown() {
-            if (!window.sunsetTime || isNaN(window.sunsetTime)) return;
+            if (!window.sunsetTime || !window.sunriseTime || isNaN(window.sunsetTime) || isNaN(window.sunriseTime)) return;
 
             const now = new Date();
-            let sunset = new Date(window.sunsetTime);
+            let targetTime;
+            let labelText;
 
-            // Wenn Sonnenuntergang bereits vorbei ist, berechne für morgen
-            if (now > sunset) {
-                sunset.setDate(sunset.getDate() + 1);
+            if (now < window.sunsetTime) {
+                targetTime = new Date(window.sunsetTime);
+                labelText = '🌇 Zeit bis Sonnenuntergang 🌇';
+            } else {
+                targetTime = new Date(window.sunriseTime);
+                targetTime.setDate(targetTime.getDate() + 1);
+                labelText = '🌄 Zeit bis Sonnenaufgang 🌄';
             }
 
-            const diff = sunset - now;
+            document.getElementById('countdown-label').textContent = labelText;
+
+            const diff = targetTime - now;
 
             if (diff > 0) {
                 const countdownHours = Math.floor(diff / (1000 * 60 * 60));
@@ -355,6 +461,7 @@
                 document.getElementById('hours').textContent = '00';
                 document.getElementById('minutes').textContent = '00';
                 document.getElementById('seconds').textContent = '00';
+                setTimeout(fetchSunTimes, 1000);
             }
         }
 
@@ -362,13 +469,10 @@
         window.addEventListener('load', function() {
             const today = new Date();
             formatDate(today);
+            loadDailyVerse();
             fetchSunTimes();
             
-            // Dynamischen Link für den Button setzen
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const dateString = `${year}-${month}-${day}`;
+            const dateString = getTodayDateString();
             document.getElementById('verse-link').href = `${VERSE_URL}#${dateString}`;
             
             setInterval(updateCountdown, 1000);
